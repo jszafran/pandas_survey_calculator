@@ -26,7 +26,7 @@ class Survey:
         if self.df is None:
             return
         
-        if fiter_type.upper() not in ["ROLLUP", "DIRECT"]:
+        if filter_type.upper() not in ["ROLLUP", "DIRECT"]:
             return
         
         org_col_name = "org_d"
@@ -34,8 +34,28 @@ class Survey:
             return self.df[self.df[org_col_name]==org_unit]
         return self.df[self.df[org_col_name].str.contains(org_unit)]
     
-    def 
-
+    def apply_filters(self, df, d):
+        """
+        Method accepts a dataframe and dictionary
+        containing demog_name: demog_value pairs.
+        Returns series of bools which is result
+        of filtering conditions intersection.
+        """
+        if df is None:
+            return
+        
+        if not isinstance(d, dict):
+            return
+        
+        df['_helper_col'] = 1==1
+        hlp_srs = df['_helper_col']
+        if not d:
+            return hlp_srs
+        for k,v in d.items():
+            hlp_srs = hlp_srs & (df[k]==v)
+        return hlp_srs
+        
+        
 # path = "<enter path here>\\resources"
 path = "/home/kuba/Desktop/my_projects/pandas_survey_calculator/resources/dummy_data_set.csv"
 
