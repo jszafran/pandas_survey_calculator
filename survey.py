@@ -16,7 +16,7 @@ class Survey:
         else:
             self.df = pd.read_csv(filepath_or_buffer=path)
         
-    def fitler_data_by_org_unit(self, org_unit, filter_type="rollup"):
+    def fitler_data_by_org_unit(self, org_unit, filter_type="ROLLUP"):
         """
         Method filtering dataset by org node provided.
         'Direct' filter type returns only respondents
@@ -25,10 +25,16 @@ class Survey:
         """
         if self.df is None:
             return
-        org_col_name = 'org_d'
-        if filter_type == "direct":
+        
+        if fiter_type.upper() not in ["ROLLUP", "DIRECT"]:
+            return
+        
+        org_col_name = "org_d"
+        if filter_type.upper() == "DIRECT":
             return self.df[self.df[org_col_name]==org_unit]
         return self.df[self.df[org_col_name].str.contains(org_unit)]
+    
+    def 
 
 # path = "<enter path here>\\resources"
 path = "/home/kuba/Desktop/my_projects/pandas_survey_calculator/resources/dummy_data_set.csv"
