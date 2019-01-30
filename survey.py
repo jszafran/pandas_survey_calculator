@@ -16,7 +16,7 @@ class Survey:
         else:
             self.df = pd.read_csv(filepath_or_buffer=path)
         
-    def filter_data_by_org_unit(self, org_unit, filter_type="ROLLUP"):
+    def filter_by_org_unit(self, org_unit, filter_type="ROLLUP"):
         """
         Method filtering dataset by org node provided.
         'Direct' filter type returns only respondents
@@ -34,7 +34,7 @@ class Survey:
             return self.df[self.df[org_col_name]==org_unit]
         return self.df[self.df[org_col_name].str.contains(org_unit)]
     
-    def apply_filters(self, df, d):
+    def filter_by_demog_cut(self, df, d):
         """
         Method accepts a dataframe and dictionary
         containing demog_name: demog_value pairs.
