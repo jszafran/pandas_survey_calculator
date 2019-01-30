@@ -16,7 +16,7 @@ class Survey:
         else:
             self.df = pd.read_csv(filepath_or_buffer=path)
         
-    def fitler_data_by_org_unit(self, org_unit, filter_type="ROLLUP"):
+    def filter_data_by_org_unit(self, org_unit, filter_type="ROLLUP"):
         """
         Method filtering dataset by org node provided.
         'Direct' filter type returns only respondents
