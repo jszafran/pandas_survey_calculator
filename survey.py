@@ -31,7 +31,6 @@ class Survey:
                                            min_scale=data['qsts'][qst][1],
                                            max_scale=data['qsts'][qst][2]))
 
-
     def filter_by_org_unit(self, org_unit, filter_type="ROLLUP"):
         """
         Method filtering dataset by org node provided.
@@ -70,12 +69,3 @@ class Survey:
         for k,v in d.items():
             hlp_srs = hlp_srs & (df[k]==v)
         return hlp_srs
-
-def main():
-    survey = Survey("LG")
-    survey.parse_config('config.json')
-    for el in survey.questions:
-        print(el)
-
-if __name__=='__main__':
-    main()
