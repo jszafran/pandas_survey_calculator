@@ -23,14 +23,18 @@ class Survey:
 
     def parse_config(self, config_file):
         # initialize questions named tuples
-        Question = namedtuple('Question', 'text min_scale max_scale')
+        Question = namedtuple('Question', 'code text min_scale max_scale')
         with open(f'./config/{config_file}', 'r') as json_file:
             data = json.load(json_file)
-        for qst in data['qsts']:
-            self.questions.append(Question(text=data['qsts'][qst][0],
-                                           min_scale=data['qsts'][qst][1],
-                                           max_scale=data['qsts'][qst][2]))
-
+        for qst_code in data['qsts']:
+            self.questions.append(Question(code = qst_code,
+                                           text=data['qsts'][qst_code][0],
+                                           min_scale=data['qsts'][qst_code][1],
+                                           max_scale=data['qsts'][qst_code][2]))
+    def _get_questions_list(self):
+        if not self.questions:
+            return None
+        return []
     def filter_by_org_unit(self, org_unit, filter_type="ROLLUP"):
         """
         Method filtering dataset by org node provided.
