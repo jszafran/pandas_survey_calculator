@@ -16,13 +16,19 @@ class Survey:
         self.questions = []
 
     def load_csv(self, path, nrows=None):
+        """
+        Loads initial dataset for survey from csv.
+        """
         if nrows:
             self.df = pd.read_csv(filepath_or_buffer=path, nrows=nrows)
         else:
             self.df = pd.read_csv(filepath_or_buffer=path)
 
     def parse_config(self, config_file):
-        # initialize questions named tuples
+        """
+        Parsing basic information about questions (code, text, scale)
+        from config file.
+        """
         Question = namedtuple('Question', 'code text min_scale max_scale')
         with open(f'./config/{config_file}', 'r') as json_file:
             data = json.load(json_file)
@@ -30,12 +36,7 @@ class Survey:
             self.questions.append(Question(code = qst_code,
                                            text=data['qsts'][qst_code][0],
                                            min_scale=int(data['qsts'][qst_code][1]),
-                                           max_scale=int(data['qsts'][qst_code][2])
-
-    def _get_questions_list(self):
-        if not self.questions:
-            return None
-        return []
+                                           max_scale=int(data['qsts'][qst_code][2])))
 
     def filter_by_org_unit(self, org_unit, filter_type="ROLLUP"):
         """
@@ -75,3 +76,28 @@ class Survey:
         for k,v in d.items():
             hlp_srs = hlp_srs & (df[k]==v)
         return hlp_srs
+
+    def _convert_min_max_range_to_dict(self, min, max):
+        """
+        Helper method for generating dictionary with min
+        and max sequence with 0 counts initialized for them.
+        """
+        res = {}
+        for i in range(min, max + 1):
+            res[i] = 0
+        return res
+
+    def _prepare_empty_results(self):
+        """
+        Prepares dictionary with empty results based on
+        questions scales from config file.
+        """
+        if not self.questions:
+            return None
+        empty_results = {}
+        for question in self.questions:
+            if not (question.min_scale, question.max_scale) in empty_results:
+                empty_results[(question.min_scale, question.max_scale)] = (
+                self._convert_min_max_range_to_dict(question.min_scale,
+                                                    question.max_scale))
+        return empty_results
