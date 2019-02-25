@@ -5,6 +5,7 @@ Quantitative Survey Calculator app
 import resources
 import json
 from collections import namedtuple
+import sys
 
 import pandas as pd
 
@@ -25,7 +26,7 @@ class Survey:
         else:
             self.df = pd.read_csv(filepath_or_buffer=path)
 
-    def parse_config(self, config_file):
+    def _parse_config(self, config_file):
         """
         Parsing basic information about questions (code, text, scale)
         from config file.
@@ -113,6 +114,9 @@ class Survey:
         return [question.code for question in self.questions]
 
     def _parse_cuts(self, cuts_file):
+        """
+        Parse and load data cuts for calculations.
+        """
         with open(f'./resources/{cuts_file}', 'r') as json_file:
             cuts_data = json.load(json_file)
         Cut = namedtuple('Cut', 'id id_full org_node demogs')
@@ -122,3 +126,11 @@ class Survey:
                                  org_node=cuts_data['cuts'][cut][1],
                                  demogs=cuts_data['cuts'][cut][2]
                                  ))
+
+    def start_calculations(self, config_file, cuts_file, output_path):
+        # parse config
+        self._parse_config('config.json')
+        # parse
+        self._parse_cuts('cuts.json')
+
+        qsts_codes = self._get_questions_codes_list()
