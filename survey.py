@@ -14,6 +14,7 @@ class Survey:
         self.df = None
         self.config = None
         self.questions = []
+        self.cuts = []
 
     def load_csv(self, path, nrows=None):
         """
@@ -110,3 +111,14 @@ class Survey:
             return None
 
         return [question.code for question in self.questions]
+
+    def _parse_cuts(self, cuts_file):
+        with open(f'./resources/{cuts_file}', 'r') as json_file:
+            cuts_data = json.load(json_file)
+        Cut = namedtuple('Cut', 'id id_full org_node demogs')
+        for cut in cuts_data['cuts']:
+            self.cuts.append(Cut(id=cut,
+                                 id_full=cuts_data['cuts'][cut][0],
+                                 org_node=cuts_data['cuts'][cut][1],
+                                 demogs=cuts_data['cuts'][cut][2]
+                                 ))
