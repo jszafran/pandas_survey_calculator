@@ -101,3 +101,12 @@ class Survey:
                 self._convert_min_max_range_to_dict(question.min_scale,
                                                     question.max_scale))
         return empty_results
+
+    def _get_questions_codes_list(self):
+        """
+        Returns list of questions codes.
+        """
+        if not self.questions:
+            return None
+
+        return [question.code for question in self.questions]
