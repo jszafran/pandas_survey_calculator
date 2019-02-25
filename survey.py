@@ -29,12 +29,14 @@ class Survey:
         for qst_code in data['qsts']:
             self.questions.append(Question(code = qst_code,
                                            text=data['qsts'][qst_code][0],
-                                           min_scale=data['qsts'][qst_code][1],
-                                           max_scale=data['qsts'][qst_code][2]))
+                                           min_scale=int(data['qsts'][qst_code][1]),
+                                           max_scale=int(data['qsts'][qst_code][2])
+
     def _get_questions_list(self):
         if not self.questions:
             return None
         return []
+
     def filter_by_org_unit(self, org_unit, filter_type="ROLLUP"):
         """
         Method filtering dataset by org node provided.
