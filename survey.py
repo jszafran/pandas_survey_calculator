@@ -6,6 +6,7 @@ import resources
 import json
 import sys
 import copy
+import pprint
 from collections import namedtuple
 
 
@@ -58,14 +59,14 @@ class Survey:
         org_col_name = "org_d"
         if filter_type.upper() == "DIRECT":
             return self.df[self.df[org_col_name]==org_unit]
-        return self.df[org_col_name].str.contains(org_unit)
+        return self.df[self.df[org_col_name].str.contains(org_unit)]
 
     def filter_by_demog_cut(self, df, d):
         """
         Method accepts a dataframe and dictionary
         containing demog_name: demog_value pairs.
-        Returns series of bools which is result
-        of filtering conditions intersection.
+        Returns filtered dataframe based on cuts
+        provided.
         """
         if df is None:
             return
@@ -79,7 +80,7 @@ class Survey:
             return hlp_srs
         for k,v in d.items():
             hlp_srs = hlp_srs & (df[k]==v)
-        return hlp_srs
+        return df[hlp_srs]
 
     def _convert_min_max_range_to_dict(self, min, max):
         """
@@ -130,6 +131,12 @@ class Survey:
                                  demogs=cuts_data['cuts'][cut][3]
                                  ))
 
+    def _calculate_counts(self, df, qsts_list, res_dict):
+        for qst in qsts_list:
+            for k,v in df[qst].value_counts().items():
+                res_dict[qst][k] = v
+        return res_dict
+
     def start_calculations(self, config_file, cuts_file, output_path):
         # parse config
         self._parse_config('config.json')
@@ -137,14 +144,21 @@ class Survey:
         self._parse_cuts('cuts.json')
 
         qsts_codes = self._get_questions_codes_list()
-        empty_results = self._prepare_empty_results()
+        empty_res_dict = self._prepare_empty_results()
+        result_blueprint = {}
+        for qst in self.questions:
+            result_blueprint[qst.code] = copy.deepcopy(empty_res_dict[(qst.min_scale, qst.max_scale)])
+
         # iterate through cut
         for cut in self.cuts:
             if cut.type_of_filter.upper() == 'ROLLUP':
-                bool_by_org_unit = self.filter_by_org_unit(cut.org_unit)
+                filtered_by_org_df = self.filter_by_org_unit(cut.org_unit)
             else:
-                bool_by_org_unit = self.filter_by_org_unit(cut.org_unit,
-                                                               "DIRECT")
-            # TODO: think of further design - if filter_by_org_unit
-            # method should return filtered df or just bool series.
-                
+                filtered_by_org_df = self.filter_by_org_unit(cut.org_unit,
+                                                                 "DIRECT")
+            final_df = self.filter_by_demog_cut(filtered_by_org_df, cut.demogs)
+
+            res = self._calculate_counts(final_df,
+                                   qsts_codes,
+                                   copy.deepcopy(result_blueprint))
+
