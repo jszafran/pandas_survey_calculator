@@ -4,8 +4,10 @@ Quantitative Survey Calculator app
 """
 import resources
 import json
-from collections import namedtuple
 import sys
+import copy
+from collections import namedtuple
+
 
 import pandas as pd
 
@@ -56,7 +58,7 @@ class Survey:
         org_col_name = "org_d"
         if filter_type.upper() == "DIRECT":
             return self.df[self.df[org_col_name]==org_unit]
-        return self.df[self.df[org_col_name].str.contains(org_unit)]
+        return self.df[org_col_name].str.contains(org_unit)
 
     def filter_by_demog_cut(self, df, d):
         """
@@ -119,12 +121,13 @@ class Survey:
         """
         with open(f'./resources/{cuts_file}', 'r') as json_file:
             cuts_data = json.load(json_file)
-        Cut = namedtuple('Cut', 'id id_full org_node demogs')
+        Cut = namedtuple('Cut', 'id id_full org_unit type_of_filter demogs')
         for cut in cuts_data['cuts']:
             self.cuts.append(Cut(id=cut,
                                  id_full=cuts_data['cuts'][cut][0],
-                                 org_node=cuts_data['cuts'][cut][1],
-                                 demogs=cuts_data['cuts'][cut][2]
+                                 org_unit=cuts_data['cuts'][cut][1],
+                                 type_of_filter=cuts_data['cuts'][cut][2],
+                                 demogs=cuts_data['cuts'][cut][3]
                                  ))
 
     def start_calculations(self, config_file, cuts_file, output_path):
@@ -134,3 +137,14 @@ class Survey:
         self._parse_cuts('cuts.json')
 
         qsts_codes = self._get_questions_codes_list()
+        empty_results = self._prepare_empty_results()
+        # iterate through cut
+        for cut in self.cuts:
+            if cut.type_of_filter.upper() == 'ROLLUP':
+                bool_by_org_unit = self.filter_by_org_unit(cut.org_unit)
+            else:
+                bool_by_org_unit = self.filter_by_org_unit(cut.org_unit,
+                                                               "DIRECT")
+            # TODO: think of further design - if filter_by_org_unit
+            # method should return filtered df or just bool series.
+                
