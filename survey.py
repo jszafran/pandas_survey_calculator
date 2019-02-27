@@ -8,7 +8,7 @@ import sys
 import copy
 import pprint
 from collections import namedtuple
-
+import time
 
 import pandas as pd
 
@@ -19,6 +19,7 @@ class Survey:
         self.config = None
         self.questions = []
         self.cuts = []
+        self.results = []
 
     def load_csv(self, path, nrows=None):
         """
@@ -77,7 +78,7 @@ class Survey:
         df['_helper_col'] = 1==1
         hlp_srs = df['_helper_col']
         if not d:
-            return hlp_srs
+            return df[hlp_srs]
         for k,v in d.items():
             hlp_srs = hlp_srs & (df[k]==v)
         return df[hlp_srs]
@@ -150,6 +151,7 @@ class Survey:
             result_blueprint[qst.code] = copy.deepcopy(empty_res_dict[(qst.min_scale, qst.max_scale)])
 
         # iterate through cut
+        time1 = time.time()
         for cut in self.cuts:
             if cut.type_of_filter.upper() == 'ROLLUP':
                 filtered_by_org_df = self.filter_by_org_unit(cut.org_unit)
@@ -161,4 +163,12 @@ class Survey:
             res = self._calculate_counts(final_df,
                                    qsts_codes,
                                    copy.deepcopy(result_blueprint))
-
+            self.results.append(res)
+        time2=time.time()
+        print(f'It took {time2-time1}s to calculate all cuts.')
+        print('writing resuls to json')
+        time1 = time.time()
+        with open('results.json', 'w') as outfile:
+            json.dump(self.results, outfile)
+        time2 = time.time()
+        print(f'Writing to json took {time2-time1}s.')
