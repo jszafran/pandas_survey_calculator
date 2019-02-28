@@ -133,7 +133,9 @@ class Survey:
                                  ))
 
     def _calculate_counts(self, df, qsts_list, res_dict):
+        res_dict['cut_respondents'] = df.shape[0]
         for qst in qsts_list:
+            res_dict[qst]['qst_respondents'] = int(df[qst].value_counts().sum())
             for k,v in df[qst].value_counts().items():
                 res_dict[qst][k] = v
         return res_dict
@@ -166,7 +168,7 @@ class Survey:
             self.results.append(res)
         time2=time.time()
         print(f'It took {time2-time1}s to calculate all cuts.')
-        print('writing resuls to json')
+        print('writing results to json')
         time1 = time.time()
         with open('results.json', 'w') as outfile:
             json.dump(self.results, outfile)
