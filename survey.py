@@ -9,6 +9,7 @@ import copy
 import pprint
 from collections import namedtuple
 import time
+import hashlib
 
 import pandas as pd
 
@@ -140,37 +141,56 @@ class Survey:
                 res_dict[qst][k] = v
         return res_dict
 
-    def start_calculations(self, config_file, cuts_file, output_path):
+    def _get_current_time_hash(self):
+        hash = hashlib.sha1()
+        hash.update(str(time.time()).encode('utf-8'))
+        return hash.hexdigest()
+
+    def start_calculations(self, config_file, cuts_file, output_path, dump_threshold=2):
         # parse config
         self._parse_config('config.json')
         # parse
         self._parse_cuts('cuts.json')
-
+        print(f"dump threshold is {dump_threshold}")
         qsts_codes = self._get_questions_codes_list()
         empty_res_dict = self._prepare_empty_results()
         result_blueprint = {}
         for qst in self.questions:
             result_blueprint[qst.code] = copy.deepcopy(empty_res_dict[(qst.min_scale, qst.max_scale)])
 
+        time_hashed = self._get_current_time_hash()
+        print(f"time hashed is {time_hashed}")
+        res_count = 0
         # iterate through cut
         time1 = time.time()
-        for cut in self.cuts:
+        res_file_part_cnt = 1
+        for idx, cut in enumerate(self.cuts):
             if cut.type_of_filter.upper() == 'ROLLUP':
                 filtered_by_org_df = self.filter_by_org_unit(cut.org_unit)
             else:
                 filtered_by_org_df = self.filter_by_org_unit(cut.org_unit,
-                                                                 "DIRECT")
+                                                             "DIRECT")
             final_df = self.filter_by_demog_cut(filtered_by_org_df, cut.demogs)
 
-            res = self._calculate_counts(final_df,
-                                   qsts_codes,
-                                   copy.deepcopy(result_blueprint))
+            res = {}
+            res[cut.id] = self._calculate_counts(final_df,
+                                         qsts_codes,
+                                         copy.deepcopy(result_blueprint))
             self.results.append(res)
+            res_count+=1
+
+            # if threshold is met or last cut is being calculated, dump to json
+            if res_count >= dump_threshold or idx == len(self.cuts)-1:
+                with open(time_hashed+'_'+str(res_file_part_cnt)+'.json', 'w') as outfile:
+                    json.dump(self.results, outfile)
+                self.results.clear()
+                res_count = 0
+                res_file_part_cnt += 1
+
         time2=time.time()
         print(f'It took {time2-time1}s to calculate all cuts.')
         print('writing results to json')
         time1 = time.time()
-        with open('results.json', 'w') as outfile:
-            json.dump(self.results, outfile)
+
         time2 = time.time()
         print(f'Writing to json took {time2-time1}s.')
