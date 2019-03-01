@@ -127,10 +127,8 @@ class Survey:
         hash.update(str(time.time()).encode('utf-8'))
         return hash.hexdigest()
 
-    def start_counts_calculations(self, config_file, cuts_file, output_path, dump_threshold=1000):
-        # parse config
+    def start_counts_calculations(self, config_file, cuts_file, output_path, dump_threshold=3):
         self._parse_config('config.json')
-        # parse
         self._parse_cuts('cuts.json')
         print(f"dump threshold is {dump_threshold}")
         qsts_codes = self._get_questions_codes_list()
@@ -163,7 +161,7 @@ class Survey:
 
             # if threshold is met or last cut is being calculated, dump to json
             if res_count >= dump_threshold or idx == len(self.cuts)-1:
-                with open(output_path+time_hashed+'_'+str(res_file_part_cnt)+'.json', 'w') as outfile:
+                with open(output_path+time_hashed+'_'+str(res_file_part_cnt).zfill(4)+'.json', 'w') as outfile:
                     json.dump(self.results, outfile)
                 self.results.clear()
                 res_count = 0
