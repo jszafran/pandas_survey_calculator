@@ -2,7 +2,8 @@
 """
 Quantitative Survey Calculator app
 """
-import resources
+from config import resultsconfig
+from surveyutils import surveyutils as su
 import json
 import sys
 import copy
@@ -21,6 +22,7 @@ class Survey:
         self.questions = []
         self.cuts = []
         self.results = []
+        self.utils = su.SurveyUtils
 
     def load_csv(self, path, nrows=None):
         """
@@ -32,18 +34,7 @@ class Survey:
             self.df = pd.read_csv(filepath_or_buffer=path)
 
     def _parse_config(self, config_file):
-        """
-        Parsing basic information about questions (code, text, scale)
-        from config file.
-        """
-        Question = namedtuple('Question', 'code text min_scale max_scale')
-        with open(f'./config/{config_file}', 'r') as json_file:
-            data = json.load(json_file)
-        for qst_code in data['qsts']:
-            self.questions.append(Question(code = qst_code,
-                                           text=data['qsts'][qst_code][0],
-                                           min_scale=int(data['qsts'][qst_code][1]),
-                                           max_scale=int(data['qsts'][qst_code][2])))
+        self.questions = self.utils.parse_config(config_file)
 
     def filter_by_org_unit(self, org_unit, filter_type="ROLLUP"):
         """
@@ -89,10 +80,9 @@ class Survey:
         Helper method for generating dictionary with min
         and max sequence with 0 counts initialized for them.
         """
-        res = {}
-        for i in range(min, max + 1):
-            res[i] = 0
-        return res
+        if not isinstance(min, int) and not isinstance(max, int):
+            raise TypeError
+        return {k: 0 for k in range(min, max + 1)}
 
     def _prepare_empty_results(self):
         """
@@ -122,16 +112,7 @@ class Survey:
         """
         Parse and load data cuts for calculations.
         """
-        with open(f'./resources/{cuts_file}', 'r') as json_file:
-            cuts_data = json.load(json_file)
-        Cut = namedtuple('Cut', 'id id_full org_unit type_of_filter demogs')
-        for cut in cuts_data['cuts']:
-            self.cuts.append(Cut(id=cut,
-                                 id_full=cuts_data['cuts'][cut][0],
-                                 org_unit=cuts_data['cuts'][cut][1],
-                                 type_of_filter=cuts_data['cuts'][cut][2],
-                                 demogs=cuts_data['cuts'][cut][3]
-                                 ))
+        self.cuts = self.utils.parse_cuts(cuts_file)
 
     def _calculate_counts(self, df, qsts_list, res_dict):
         res_dict['cut_respondents'] = df.shape[0]
@@ -146,7 +127,7 @@ class Survey:
         hash.update(str(time.time()).encode('utf-8'))
         return hash.hexdigest()
 
-    def start_calculations(self, config_file, cuts_file, output_path, dump_threshold=2):
+    def start_counts_calculations(self, config_file, cuts_file, output_path, dump_threshold=1000):
         # parse config
         self._parse_config('config.json')
         # parse
@@ -157,6 +138,7 @@ class Survey:
         result_blueprint = {}
         for qst in self.questions:
             result_blueprint[qst.code] = copy.deepcopy(empty_res_dict[(qst.min_scale, qst.max_scale)])
+        output_path = './output/'
 
         time_hashed = self._get_current_time_hash()
         print(f"time hashed is {time_hashed}")
@@ -181,7 +163,7 @@ class Survey:
 
             # if threshold is met or last cut is being calculated, dump to json
             if res_count >= dump_threshold or idx == len(self.cuts)-1:
-                with open(time_hashed+'_'+str(res_file_part_cnt)+'.json', 'w') as outfile:
+                with open(output_path+time_hashed+'_'+str(res_file_part_cnt)+'.json', 'w') as outfile:
                     json.dump(self.results, outfile)
                 self.results.clear()
                 res_count = 0
