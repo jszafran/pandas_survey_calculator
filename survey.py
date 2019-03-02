@@ -2,27 +2,23 @@
 """
 Quantitative Survey Calculator app
 """
-from config import resultsconfig
 from surveyutils import surveyutils as su
+
+import pandas as pd
 import json
-import sys
 import copy
-import pprint
-from collections import namedtuple
 import time
 import hashlib
 
-import pandas as pd
-
 class Survey:
-    def __init__(self, name):
-        self.name = name
+    def __init__(self):
         self.df = None
         self.config = None
         self.questions = []
         self.cuts = []
         self.results = []
         self.utils = su.SurveyUtils
+        self.result_file_hash = None
 
     def load_csv(self, path, nrows=None):
         """
@@ -127,7 +123,7 @@ class Survey:
         hash.update(str(time.time()).encode('utf-8'))
         return hash.hexdigest()
 
-    def start_counts_calculations(self, config_file, cuts_file, output_path, dump_threshold=3):
+    def start_process(self, config_file, cuts_file, dump_threshold=100):
         self._parse_config('config.json')
         self._parse_cuts('cuts.json')
         print(f"dump threshold is {dump_threshold}")
@@ -137,9 +133,8 @@ class Survey:
         for qst in self.questions:
             result_blueprint[qst.code] = copy.deepcopy(empty_res_dict[(qst.min_scale, qst.max_scale)])
         output_path = './output/'
-
         time_hashed = self._get_current_time_hash()
-        print(f"time hashed is {time_hashed}")
+        self.result_file_hash = time_hashed
         res_count = 0
         # iterate through cut
         time1 = time.time()
@@ -168,9 +163,5 @@ class Survey:
                 res_file_part_cnt += 1
 
         time2=time.time()
-        print(f'It took {time2-time1}s to calculate all cuts.')
-        print('writing results to json')
-        time1 = time.time()
+        print(f'It took {time2-time1}s to calculate all cuts. Hash of the results file: \n{self.result_file_hash}')
 
-        time2 = time.time()
-        print(f'Writing to json took {time2-time1}s.')

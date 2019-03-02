@@ -5,7 +5,7 @@ import json
 class SurveyUtils:
 
     @classmethod
-    def parse_config(self, config_file):
+    def parse_config(cls, config_file):
         """
         Parsing basic information about questions (code, text, scale)
         from config file.
@@ -21,7 +21,7 @@ class SurveyUtils:
                          results_config=data['qsts'][qst_code][3]) for qst_code in data['qsts']]
 
     @classmethod
-    def parse_cuts(self, cuts_file):
+    def parse_cuts(cls, cuts_file):
         """
         Parse and load data cuts for calculations.
         """
